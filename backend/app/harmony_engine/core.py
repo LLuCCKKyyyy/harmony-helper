@@ -2,10 +2,20 @@
 Harmony Helper - Core Harmony Generation Engine
 使用 music21 库实现多种和声生成算法
 """
+from music21 import note, interval, stream
+import random
 
-from music21 import note, interval, pitch, stream
 from typing import List, Tuple, Dict
 from enum import Enum
+
+def convert_to_tonejs_format(pitch_name: str) -> str:
+    """
+    将music21的音符格式转换为Tone.js格式
+    music21: E-4, A-3 (- 表示降号)
+    Tone.js: Eb4, Ab3 (b 表示降号)
+    """
+    # 将 '-' 替换为 'b'
+    return pitch_name.replace('-', 'b')
 
 
 class HarmonyType(Enum):
@@ -92,7 +102,7 @@ class HarmonyGenerator:
                 harmony_pitch = m21_note.pitch.transpose(semitones * direction_multiplier)
                 
                 harmony_notes.append({
-                    'pitch': harmony_pitch.nameWithOctave,
+                    'pitch': convert_to_tonejs_format(harmony_pitch.nameWithOctave),
                     'duration': melody_note['duration'],
                     'offset': melody_note['offset']
                 })
@@ -125,7 +135,7 @@ class HarmonyGenerator:
         first_harmony_pitch = first_melody.pitch.transpose(7 * direction_multiplier)
         
         harmony_notes.append({
-            'pitch': first_harmony_pitch.nameWithOctave,
+            'pitch': convert_to_tonejs_format(first_harmony_pitch.nameWithOctave),
             'duration': melody_notes[0]['duration'],
             'offset': melody_notes[0]['offset']
         })
@@ -143,7 +153,7 @@ class HarmonyGenerator:
             new_harmony_pitch = prev_harmony.pitch.transpose(-melody_interval)
             
             harmony_notes.append({
-                'pitch': new_harmony_pitch.nameWithOctave,
+                'pitch': convert_to_tonejs_format(new_harmony_pitch.nameWithOctave),
                 'duration': melody_notes[i]['duration'],
                 'offset': melody_notes[i]['offset']
             })
@@ -172,7 +182,7 @@ class HarmonyGenerator:
         harmony_notes = []
         for melody_note in melody_notes:
             harmony_notes.append({
-                'pitch': pedal_pitch.nameWithOctave,
+                'pitch': convert_to_tonejs_format(pedal_pitch.nameWithOctave),
                 'duration': melody_note['duration'],
                 'offset': melody_note['offset']
             })
@@ -206,7 +216,7 @@ class HarmonyGenerator:
         total_duration = max(n['offset'] + n['duration'] for n in melody_notes)
         
         return [{
-            'pitch': pedal_note.pitch.nameWithOctave,
+            'pitch': convert_to_tonejs_format(pedal_note.pitch.nameWithOctave),
             'duration': total_duration,
             'offset': 0.0
         }]
