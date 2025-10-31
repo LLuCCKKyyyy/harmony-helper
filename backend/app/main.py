@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from enum import Enum
+import os
 
 from app.harmony_engine.core import HarmonyGenerator, HarmonyType
 
@@ -19,9 +20,11 @@ app = FastAPI(
 )
 
 # 配置 CORS（允许前端跨域访问）
+# 从环境变量读取允许的域名，默认允许所有
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 生产环境应该限制具体域名
+    allow_origins=allowed_origins if allowed_origins != ["*"] else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
