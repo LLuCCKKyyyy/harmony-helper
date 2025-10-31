@@ -51,6 +51,11 @@ class HarmonyRequest(BaseModel):
         description="和声类型: third, fifth, parallel_fourth, parallel_sixth, contrary, oblique, pedal",
         example="third"
     )
+    octave_direction: Optional[str] = Field(
+        "higher",
+        description="和声音高方向: higher (高八度) 或 lower (低八度)",
+        example="higher"
+    )
 
 
 class NoteOutput(BaseModel):
@@ -166,7 +171,8 @@ async def generate_harmony(request: HarmonyRequest):
         # 生成和声
         harmony_notes = harmony_generator.generate_harmony(
             melody_notes,
-            harmony_type
+            harmony_type,
+            request.octave_direction or "higher"
         )
         
         # 构建响应

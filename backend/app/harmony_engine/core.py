@@ -29,7 +29,8 @@ class HarmonyGenerator:
     def generate_harmony(
         self, 
         melody_notes: List[Dict], 
-        harmony_type: HarmonyType
+        harmony_type: HarmonyType,
+        octave_direction: str = "higher"
     ) -> List[Dict]:
         """
         根据旋律音符和和声类型生成和声
@@ -38,31 +39,36 @@ class HarmonyGenerator:
             melody_notes: 旋律音符列表，每个音符是一个字典:
                          {'pitch': 'C4', 'duration': 1.0, 'offset': 0.0}
             harmony_type: 和声类型
+            octave_direction: 和声音高方向 ("higher" 或 "lower")
             
         Returns:
             和声音符列表，格式与输入相同
         """
+        # 确定音程方向：higher=向上，lower=向下
+        direction_multiplier = 1 if octave_direction == "higher" else -1
+        
         if harmony_type == HarmonyType.THIRD:
-            return self._generate_parallel_interval(melody_notes, 3)
+            return self._generate_parallel_interval(melody_notes, 3, direction_multiplier)
         elif harmony_type == HarmonyType.FIFTH:
-            return self._generate_parallel_interval(melody_notes, 4)
+            return self._generate_parallel_interval(melody_notes, 4, direction_multiplier)
         elif harmony_type == HarmonyType.PARALLEL_FOURTH:
-            return self._generate_parallel_interval(melody_notes, 5)
+            return self._generate_parallel_interval(melody_notes, 5, direction_multiplier)
         elif harmony_type == HarmonyType.PARALLEL_SIXTH:
-            return self._generate_parallel_interval(melody_notes, 8)
+            return self._generate_parallel_interval(melody_notes, 8, direction_multiplier)
         elif harmony_type == HarmonyType.CONTRARY:
-            return self._generate_contrary_motion(melody_notes)
+            return self._generate_contrary_motion(melody_notes, direction_multiplier)
         elif harmony_type == HarmonyType.OBLIQUE:
-            return self._generate_oblique_motion(melody_notes)
+            return self._generate_oblique_motion(melody_notes, direction_multiplier)
         elif harmony_type == HarmonyType.PEDAL:
-            return self._generate_pedal_tone(melody_notes)
+            return self._generate_pedal_tone(melody_notes, direction_multiplier)
         else:
             raise ValueError(f"Unknown harmony type: {harmony_type}")
     
     def _generate_parallel_interval(
         self, 
         melody_notes: List[Dict], 
-        semitones: int
+        semitones: int,
+        direction_multiplier: int = -1
     ) -> List[Dict]:
         """
         生成平行音程和声
@@ -70,6 +76,7 @@ class HarmonyGenerator:
         Args:
             melody_notes: 旋律音符列表
             semitones: 音程半音数（3=小三度, 4=大三度, 5=纯四度, 7=纯五度, 8=小六度等）
+            direction_multiplier: 方向乘数 (1=向上, -1=向下)
             
         Returns:
             和声音符列表
@@ -81,8 +88,8 @@ class HarmonyGenerator:
                 # 创建 music21 音符对象
                 m21_note = note.Note(melody_note['pitch'])
                 
-                # 计算和声音符（向下移动指定音程）
-                harmony_pitch = m21_note.pitch.transpose(-semitones)
+                # 计算和声音符（根据方向移动指定音程）
+                harmony_pitch = m21_note.pitch.transpose(semitones * direction_multiplier)
                 
                 harmony_notes.append({
                     'pitch': harmony_pitch.nameWithOctave,
@@ -95,26 +102,27 @@ class HarmonyGenerator:
         
         return harmony_notes
     
-    def _generate_contrary_motion(self, melody_notes: List[Dict]) -> List[Dict]:
+    def _generate_contrary_motion(self, melody_notes: List[Dict], direction_multiplier: int = -1) -> List[Dict]:
         """
         生成反向运动和声
         当旋律上行时，和声下行；旋律下行时，和声上行
         
         Args:
             melody_notes: 旋律音符列表
+            direction_multiplier: 方向乘数
             
         Returns:
             和声音符列表
         """
         if len(melody_notes) < 2:
             # 如果只有一个音符，返回其五度音
-            return self._generate_parallel_interval(melody_notes, 7)
+            return self._generate_parallel_interval(melody_notes, 7, direction_multiplier)
         
         harmony_notes = []
         
         # 第一个和声音符：从旋律第一个音符的五度开始
         first_melody = note.Note(melody_notes[0]['pitch'])
-        first_harmony_pitch = first_melody.pitch.transpose(-7)
+        first_harmony_pitch = first_melody.pitch.transpose(7 * direction_multiplier)
         
         harmony_notes.append({
             'pitch': first_harmony_pitch.nameWithOctave,
@@ -142,13 +150,14 @@ class HarmonyGenerator:
         
         return harmony_notes
     
-    def _generate_oblique_motion(self, melody_notes: List[Dict]) -> List[Dict]:
+    def _generate_oblique_motion(self, melody_notes: List[Dict], direction_multiplier: int = -1) -> List[Dict]:
         """
         生成斜向运动和声
         和声声部保持在一个固定音高上（持续音），而旋律自由移动
         
         Args:
             melody_notes: 旋律音符列表
+            direction_multiplier: 方向乘数
             
         Returns:
             和声音符列表
@@ -158,7 +167,7 @@ class HarmonyGenerator:
         
         # 选择第一个旋律音符的五度作为持续音
         first_melody = note.Note(melody_notes[0]['pitch'])
-        pedal_pitch = first_melody.pitch.transpose(-7)
+        pedal_pitch = first_melody.pitch.transpose(7 * direction_multiplier)
         
         harmony_notes = []
         for melody_note in melody_notes:
@@ -170,13 +179,14 @@ class HarmonyGenerator:
         
         return harmony_notes
     
-    def _generate_pedal_tone(self, melody_notes: List[Dict]) -> List[Dict]:
+    def _generate_pedal_tone(self, melody_notes: List[Dict], direction_multiplier: int = -1) -> List[Dict]:
         """
         生成持续音（Pedal Tone）
         通常使用旋律的主音或属音作为持续低音
         
         Args:
             melody_notes: 旋律音符列表
+            direction_multiplier: 方向乘数
             
         Returns:
             和声音符列表
@@ -184,13 +194,13 @@ class HarmonyGenerator:
         if not melody_notes:
             return []
         
-        # 分析旋律，找到最低音作为参考
+        # 分析旋律，找到最低音或最高音作为参考
         pitches = [note.Note(n['pitch']).pitch.ps for n in melody_notes]
-        min_pitch_ps = min(pitches)
+        ref_pitch_ps = min(pitches) if direction_multiplier == -1 else max(pitches)
         
-        # 创建一个比最低音低一个八度的持续音
+        # 创建一个比参考音高一个八度的持续音
         pedal_note = note.Note()
-        pedal_note.pitch.ps = min_pitch_ps - 12  # 低一个八度
+        pedal_note.pitch.ps = ref_pitch_ps + (12 * direction_multiplier)  # 上或下一个八度
         
         # 创建一个贯穿整个旋律的长音符
         total_duration = max(n['offset'] + n['duration'] for n in melody_notes)
