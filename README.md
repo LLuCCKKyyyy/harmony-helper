@@ -74,7 +74,35 @@ harmony-helper/
     └── harmony-helper-frontend/
 ```
 
-## 🚀 Getting Started
+## 🚀 快速部署（生产环境）
+
+### 后端部署（二选一）
+
+#### 方案 1：Render 一键部署（推荐）
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/LLuCCKKyyyy/harmony-helper)
+
+点击上面的按钮，按照提示配置即可。**详细教程见** [RENDER_ONE_CLICK_DEPLOY.md](backend/RENDER_ONE_CLICK_DEPLOY.md)
+
+#### 方案 2：Railway 部署
+
+访问 [railway.app](https://railway.app) 并按照 [RAILWAY_DEPLOYMENT_TUTORIAL.md](backend/RAILWAY_DEPLOYMENT_TUTORIAL.md) 的图文教程操作。
+
+### 前端配置
+
+后端部署完成后，需要在前端配置后端 URL：
+
+**在 Manus 平台：**
+1. 打开前端项目的 Management UI
+2. 进入 **Settings → Secrets**
+3. 添加环境变量：
+   - **Key**: `VITE_API_URL`
+   - **Value**: `https://your-backend-url.onrender.com` （你的后端 URL）
+4. 保存后前端会自动重新部署
+
+---
+
+## 🚀 Getting Started (本地开发)
 
 ### Prerequisites
 
